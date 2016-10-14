@@ -608,7 +608,11 @@ function islandora_ip_embargo_hex_validate($element, &$form_state, $form) {
   }
 }
 
-
+/**
+ * Add new datastream to db.
+ * 
+ * @param type $datastreams
+ */
 
 function islandora_ip_embargo_add_datastream($datastreams){
   module_load_include('inc', 'islandora_ip_embargo', 'includes/utilities');
@@ -628,6 +632,17 @@ function islandora_ip_embargo_add_datastream($datastreams){
   }
 }
 
+/**
+ * Add new datastream with IP embargo record to db.
+ * 
+ * @param type $islandora_object_id
+ * 
+ * @param type $datastreams
+ * 
+ * @param type $expiry_date
+ * 
+ */
+
 function islandora_ip_embargo_add_datastream_embargo($islandora_object_id, $datastreams, $expiry_date = NULL){
   module_load_include('inc', 'islandora_ip_embargo', 'includes/utilities');
   islandora_ip_embargo_add_datastream($datastreams);
@@ -645,6 +660,14 @@ function islandora_ip_embargo_add_datastream_embargo($islandora_object_id, $data
     }
   }
 }
+
+/**
+ * Construct datastream set with id and name to array
+ * 
+ * @param type $datastreams
+ * 
+ */
+
 function islandora_ip_embargo_construct_datastream_set($datastreams){
   module_load_include('inc', 'islandora_ip_embargo', 'includes/utilities');
   islandora_ip_embargo_add_datastream($datastreams);
@@ -663,6 +686,14 @@ function islandora_ip_embargo_construct_datastream_set($datastreams){
   }
   return $datastreamSets;
 }
+
+/**
+ * Construct existing record set to array from db
+ * 
+ * @param type $islandora_object_id
+ * 
+ */
+
 function islandora_ip_embargo_construct_existint_record_set($islandora_object_id){
   module_load_include('inc', 'islandora_ip_embargo', 'includes/utilities');
   $embargo_ds = islandora_ip_embargo_get_datastream_embargo_record($islandora_object_id);
@@ -678,6 +709,17 @@ function islandora_ip_embargo_construct_existint_record_set($islandora_object_id
   }
   return $embargo_ds;
 }
+
+/**
+ * Update IP embargo datastream record
+ * 
+ * @param type $islandora_object_id
+ * 
+ * @param type $datastreams
+ * 
+ * @param type $expiry_date
+ * 
+ */
 
 function islandora_ip_embargo_update_datastream_embargo($islandora_object_id,$datastreams = NULL,$expiry_date = NULL){
   module_load_include('inc', 'islandora_ip_embargo', 'includes/utilities');
@@ -711,6 +753,16 @@ function islandora_ip_embargo_update_datastream_embargo($islandora_object_id,$da
   }
 }
 
+/**
+ * Recurrsive compare multi-deminsion array, simulate in_array() function
+ * 
+ * @param type $islandora_object_id
+ * 
+ * @param type $datastreams
+ * 
+ * @param type $expiry_date
+ * 
+ */
 function in_array_r($needle, $haystack, $strict = false) {
     foreach ($haystack as $item) {
         if (($strict ? $item === $needle : $item == $needle) || (is_array($item) && in_array_r($needle, $item, $strict))) {
