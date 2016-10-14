@@ -227,6 +227,163 @@ function islandora_ip_embargo_remove_embargo($islandora_object_id) {
 }
 
 /**
+ * Add an datastream information.
+ *
+ * @param string $datastream_name
+ *   The datastream name to database.
+ */
+function islandora_ip_embargo_add_datastream_record($datastream_name) {
+  db_insert('islandora_ip_embargo_datastream')
+  ->fields(array(
+    'datastream_name' => $datastream_name,
+  ))
+  ->execute();
+}
+
+/**
+ * Get an datastream information.
+ *
+ * @param string $datastream_name
+ *   The datastream name to database.
+ */
+function islandora_ip_embargo_get_datastream_record($datastream_name) {
+  $datastream = db_select('islandora_ip_embargo_datastream')
+  ->fields('islandora_ip_embargo_datastream')
+  ->condition('datastream_name', $datastream_name)
+  ->execute();
+  return $datastream;
+}
+
+/**
+ * Get an datastream information.
+ *
+ * @param string $datastream_name
+ *   The datastream name to database.
+ */
+function islandora_ip_embargo_get_all_datastream_record() {
+  $datastream = db_select('islandora_ip_embargo_datastream','ds')
+  ->fields('ds')
+  ->execute();
+  
+  return $datastream;
+}
+
+/**
+ * Add an datastream embargo for object
+ *
+ * @param int $did
+ *   The datastream id.
+ * @param int $islandora_object_id
+ *   The pid of that object.
+ * @param datetime $expiry_date
+ *   The timestamp to stop the embargo at.
+ */
+function islandora_ip_embargo_add_datastream_embargo_record($did, $islandora_object_id, $expiry_date = NULL) {
+  db_insert('islandora_ip_embargo_embargoes_datastream')
+  ->fields(array(
+    'did' => $did,
+    'pid' => $islandora_object_id,
+    'expiry_date' => $expiry_date,
+  ))
+  ->execute();
+}
+
+/**
+ * Get datastream embargo for object
+ *
+ * @param int $islandora_object_id
+ *   The pid of that object.
+ * 
+ */
+function islandora_ip_embargo_get_datastream_embargo_record($islandora_object_id) {
+  $result = db_select('islandora_ip_embargo_embargoes_datastream','ip_embargo_ds')
+  ->fields('ip_embargo_ds')
+  ->orderBy('id','ASC')
+  ->execute();
+  
+  return $result;
+}
+
+/**
+ * Get single datastream embargo for object
+ *
+ * @param int $islandora_object_id
+ *   The pid of that object.
+ * 
+ */
+function islandora_ip_embargo_get_single_datastream_embargo_record($islandora_object_id,$did) {
+  $result = db_select('islandora_ip_embargo_embargoes_datastream','ip_embargo_ds')
+  ->fields('ip_embargo_ds')
+  ->condition('pid', $islandora_object_id, '=')
+  ->condition('did', $did, '=')
+  ->execute();
+  
+  return $result;
+}
+
+/**
+ * Delete an datastream embargo for object
+ *
+ * @param int $islandora_object_id
+ *   The pid of that object.
+ * 
+ */
+function islandora_ip_embargo_delete_datastream_embargo_record($islandora_object_id) {
+  $result = db_delete('islandora_ip_embargo_embargoes_datastream')
+  ->condition('pid', $islandora_object_id, '=')
+  ->execute();
+  
+  if(!$result){
+    watchdog(
+      'Islandora IP Embargo',
+      "Cannot delete ip embargo object",
+      array('@pid' => $islandora_object_id)
+    );
+    drupal_set_message("Cannot delete ip embargo object " . $islandora_object_id, 'error');
+  }
+}
+
+/**
+ * Delete an datastream embargo with pid and did for object
+ *
+ * @param int $islandora_object_id
+ *   The pid of that object.
+ * 
+ */
+function islandora_ip_embargo_delete_single_datastream_embargo_record($islandora_object_id,$did) {
+  $result = db_delete('islandora_ip_embargo_embargoes_datastream')
+  ->condition('pid', $islandora_object_id, '=')
+  ->condition('did', $did, '=')
+  ->execute();
+  
+  if(!$result){
+    watchdog(
+      'Islandora IP Embargo',
+      "Cannot delete single ip embargo object",
+      array('@pid' => $islandora_object_id)
+    );
+    drupal_set_message("Cannot delete single ip embargo object " . $islandora_object_id, 'error');
+  }
+}
+
+/**
+ * Update an datastream embargo for object
+ *
+ * @param int $islandora_object_id
+ *   The pid of that object.
+ * @param datetime $expiry_date
+ *   The timestamp to stop the embargo at.
+ */
+function islandora_ip_embargo_update_datastream_embargo_record($islandora_object_id, $expiry_date = NULL) {
+  db_update('islandora_ip_embargo_embargoes_datastream')
+  ->fields(array(
+    'expiry_date' => $expiry_date,
+  ))
+  ->condition('pid', $islandora_object_id, '=')
+  ->execute();
+}
+
+/**
  * Will check if the current user's request IP is in an indicated range.
  *
  * @param string $low
@@ -258,6 +415,24 @@ function islandora_ip_embargo_cron_cleanup($time_stamp) {
   watchdog(
     'Cron Job End',
     "The ip embargo cron job has ended, @num_deleted embargos have been removed.",
+    array('@num_deleted' => $num_deleted)
+  );
+}
+
+/**
+ * Remove all datastreams embargoes if the expiry timestamp has passed.
+ *
+ * @param int $time_stamp
+ *   The timestamp to judge embargo expiries by.
+ */
+function islandora_ip_embargo_cron_datastream_cleanup($time_stamp) {
+  $num_deleted = db_delete('islandora_ip_embargo_embargoes_datastream')
+  ->condition('expiry_date', $time_stamp, '<=')
+  ->execute();
+
+  watchdog(
+    'Cron Job End',
+    "The ip embargo cron job has ended, @num_deleted datastream embargos have been removed.",
     array('@num_deleted' => $num_deleted)
   );
 }
