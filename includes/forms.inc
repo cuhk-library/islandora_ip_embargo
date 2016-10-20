@@ -452,40 +452,13 @@ function islandora_ip_embargo_object_embargo_form($form, &$form_state, $islandor
   while ($data = $list_results->fetchObject()) {
     $options[$data->lid] = $data->name;
   }
-  
-  //Get current selected datastream record
-  $embargo_ds = islandora_ip_embargo_construct_existint_record_set($islandora_object->id);
-  $default_ds_option = array();
-  //Add all Datastream
-  foreach ($islandora_object as $ds) {
-    $ds_options[$ds->id] = $ds->id;
-    if(isset($embargo_ds) && !empty($embargo_ds)){
-      foreach($embargo_ds as $eds){
-        if($ds->id === $eds->datastream_name){
-          $default_ds_option[] = $eds->datastream_name;
-        }
-      }
-    }
-  }
-  
+
   $form['lists'] = array(
     '#type' => 'select',
     '#title' => 'IP address range list',
     '#description' => t('The list of IP ranges for which this object will be available.  Any other network address will be blocked.'),
     '#options' => $options,
   );
-  /*$form['object_embargo'] = array(
-		'#type' => 'checkbox',
-		'#title' => 'Object-level embargo',
-    '#attributes' => array('class' => array('object_embargo_checkbox')),
-	);*/
-  $form['datastream_embargo'] = array(
-		'#type' => 'checkboxes',
-		'#title' => 'Select Datastream to embargo',
-		'#options' => $ds_options,
-    '#default_value' => $default_ds_option,
-    '#attributes' => array('class' => array('datastream_embargo_checkbox')),
-	);
   $form['expiry_date'] = array(
     '#type' => 'date',
     '#title' => 'Expiry',
@@ -533,15 +506,6 @@ function islandora_ip_embargo_object_embargo_form($form, &$form_state, $islandor
 function islandora_ip_embargo_object_embargo_form_submit($form, &$form_state) {
   module_load_include('inc', 'islandora_ip_embargo', 'includes/utilities');
   $expiry = NULL;
-  $datastreams = NULL;
-  
-  foreach($form_state['values']['datastream_embargo'] as $ds_label => $ds_value){
-    if($ds_value !== 0){
-      $datastreams[$ds_label] = $ds_label;
-    }
-  }
-  
-  
   if (!$form_state['values']['never_expire']) {
     $expiry = mktime(
       0,
@@ -559,34 +523,17 @@ function islandora_ip_embargo_object_embargo_form_submit($form, &$form_state) {
         $form_state['values']['lists'],
         $expiry
       );
-      //Update time only
-      islandora_ip_embargo_update_datastream_embargo_record($form_state['storage']['islandroa_ip_embargo']['pid'],$expiry);
-      if(isset($datastreams) && !empty($datastreams)){
-        islandora_ip_embargo_add_datastream($datastreams);
-      }
-      //Remove or add datastream
-      islandora_ip_embargo_update_datastream_embargo($form_state['storage']['islandroa_ip_embargo']['pid'],$datastreams,$expiry);
     }
     else {
       islandora_ip_embargo_remove_embargo($form_state['storage']['islandroa_ip_embargo']['pid']);
-      $embargo_ds = islandora_ip_embargo_get_datastream_embargo_record($form_state['storage']['islandroa_ip_embargo']['pid']);
-      $embargo_ds = $embargo_ds->fetchAll();
-      if(isset($embargo_ds) && !empty($embargo_ds)){
-        islandora_ip_embargo_delete_datastream_embargo_record($form_state['storage']['islandroa_ip_embargo']['pid']);
-      }
     }
   }
   else {
-    if ($form_state['values']['lists'] != 'none') {
-      islandora_ip_embargo_set_embargo(
-        $form_state['storage']['islandroa_ip_embargo']['pid'],
-        $form_state['values']['lists'],
-        $expiry
-      );
-      if(isset($datastreams) && !empty($datastreams)){
-        islandora_ip_embargo_add_datastream_embargo($form_state['storage']['islandroa_ip_embargo']['pid'], $datastreams,$expiry);
-      }
-    }
+    islandora_ip_embargo_set_embargo(
+      $form_state['storage']['islandroa_ip_embargo']['pid'],
+      $form_state['values']['lists'],
+      $expiry
+    );
   }
   return $form;
 }
@@ -606,117 +553,4 @@ function islandora_ip_embargo_hex_validate($element, &$form_state, $form) {
   if (!(ctype_xdigit($color) && (strlen($color) === 6 || strlen($color) === 3))) {
     form_set_error('islandora_ip_embargo_overlay_text_color', t('Color must match hexideciamal format, requires 3 or 6 characters and A-F 0-9 characters apply (E.g. F0A3B1 or F1A).'));
   }
-}
-
-
-
-function islandora_ip_embargo_add_datastream($datastreams){
-  module_load_include('inc', 'islandora_ip_embargo', 'includes/utilities');
-  $datastreamdb = islandora_ip_embargo_get_all_datastream_record();
-  $datastreamdb = $datastreamdb->fetchCol(1);
-  
-  if(is_array($datastreams)){
-    foreach($datastreams as $label => $value){
-      if(!in_array($value, $datastreamdb)){
-        islandora_ip_embargo_add_datastream_record($value);
-      }
-    }
-  }else{
-    if(!in_array($datastreams, $datastreamdb)){
-      islandora_ip_embargo_add_datastream_record($datastreams);
-    }
-  }
-}
-
-function islandora_ip_embargo_add_datastream_embargo($islandora_object_id, $datastreams, $expiry_date = NULL){
-  module_load_include('inc', 'islandora_ip_embargo', 'includes/utilities');
-  islandora_ip_embargo_add_datastream($datastreams);
-  $datastreamdb = islandora_ip_embargo_get_all_datastream_record();
-  $datastreamdb = $datastreamdb->fetchAll();
-  foreach($datastreamdb as $ds){
-    if(is_array($datastreams)){
-      if(in_array($ds->datastream_name, $datastreams)){
-        islandora_ip_embargo_add_datastream_embargo_record($ds->did, $islandora_object_id,$expiry_date);
-      }
-    }else{
-      if($ds->datastream_name === $datastreams){
-        islandora_ip_embargo_add_datastream_embargo_record($ds->did, $islandora_object_id,$expiry_date);
-      }
-    }
-  }
-}
-function islandora_ip_embargo_construct_datastream_set($datastreams){
-  module_load_include('inc', 'islandora_ip_embargo', 'includes/utilities');
-  islandora_ip_embargo_add_datastream($datastreams);
-  $datastreamdb = islandora_ip_embargo_get_all_datastream_record();
-  $datastreamdb = $datastreamdb->fetchAll();
-  $datastreamSets = array();
-  $counter = 0;
-  foreach($datastreams as $ds){
-    foreach($datastreamdb as $dsdb){
-      if($ds === $dsdb->datastream_name){
-        $datastreamSets[$counter]['datastream_name'] = $dsdb->datastream_name;
-        $datastreamSets[$counter]['did'] = $dsdb->did;
-        $counter++;
-      }
-    }
-  }
-  return $datastreamSets;
-}
-function islandora_ip_embargo_construct_existint_record_set($islandora_object_id){
-  module_load_include('inc', 'islandora_ip_embargo', 'includes/utilities');
-  $embargo_ds = islandora_ip_embargo_get_datastream_embargo_record($islandora_object_id);
-  $embargo_ds = $embargo_ds->fetchAll();
-  $datastreamdb = islandora_ip_embargo_get_all_datastream_record();
-  $datastreamdb = $datastreamdb->fetchAll();
-  foreach($embargo_ds as $eds){
-    foreach($datastreamdb as $dsdb){
-      if($eds->did === $dsdb->did){
-        $eds->datastream_name = $dsdb->datastream_name;
-      }
-    }
-  }
-  return $embargo_ds;
-}
-
-function islandora_ip_embargo_update_datastream_embargo($islandora_object_id,$datastreams = NULL,$expiry_date = NULL){
-  module_load_include('inc', 'islandora_ip_embargo', 'includes/utilities');
-  $embargo_ds = islandora_ip_embargo_construct_existint_record_set($islandora_object_id);
-  if(!isset($datastreams) || empty($datastreams)){
-    if(isset($embargo_ds) && !empty($embargo_ds)){
-      islandora_ip_embargo_delete_datastream_embargo_record($islandora_object_id);
-    }
-  }else{
-    $datastreamSets = islandora_ip_embargo_construct_datastream_set($datastreams);
-    if(!isset($embargo_ds) || empty($embargo_ds)){
-      islandora_ip_embargo_add_datastream_embargo($islandora_object_id, $datastreams,$expiry_date);
-    }else{
-      //Remove item is unchecked
-      foreach($embargo_ds as $eds){
-        if(!in_array_r($eds->datastream_name, $datastreamSets)){
-          $did = $eds->did;
-          islandora_ip_embargo_delete_single_datastream_embargo_record($islandora_object_id, $did);
-        }
-      }
-      
-      //Add item if it is new
-      foreach($datastreamSets as $dsset){
-        $result = islandora_ip_embargo_get_single_datastream_embargo_record($islandora_object_id, $dsset['did']);
-        $result = $result->fetchAll();
-        if(!isset($result) || empty($result)){
-          islandora_ip_embargo_add_datastream_embargo($islandora_object_id,$dsset['datastream_name'],$expiry_date);
-        }
-      }
-    }
-  }
-}
-
-function in_array_r($needle, $haystack, $strict = false) {
-    foreach ($haystack as $item) {
-        if (($strict ? $item === $needle : $item == $needle) || (is_array($item) && in_array_r($needle, $item, $strict))) {
-            return true;
-        }
-    }
-
-    return false;
 }

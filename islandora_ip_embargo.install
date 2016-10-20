@@ -26,7 +26,7 @@ function islandora_ip_embargo_schema() {
     ),
     'primary key' => array('lid'),
   );
-  
+
   $schema['islandora_ip_embargo_ip_ranges'] = array(
     'description' => 'Table that stores lists of IP ranges.',
     'fields' => array(
@@ -100,66 +100,7 @@ function islandora_ip_embargo_schema() {
     ),
     'primary key' => array('pid'),
   );
-  
-  $schema['islandora_ip_embargo_datastream'] = array(
-    'description' => 'Unique datastream name and id.',
-    'fields' => array(
-      'did' => array(
-        'type' => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'description' => 'The id of each item.',
-      ),
-      'datastream_name' => array(
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-        'description' => 'Name of the datastream',
-      ),
-    ),
-    'primary key' => array('did'),
-  );
-  
-  $schema['islandora_ip_embargo_embargoes_datastream'] = array(
-    'description' => 'Datastream embargo for particular pid.',
-    'fields' => array(
-      'id' => array(
-        'type' => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'description' => 'The id of each item.',
-      ),
-      'did' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'description' => 'The datastream id',
-      ),
-      'pid' => array(
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-        'description' => 'PID of Object',
-      ),
-      'expiry_date' => array(
-        'type' => 'varchar',
-        'length' => 255,
-        'description' => 'Expiry date of that pid',
-      ),
-    ),
-    'foreign keys' => array(
-      'list' => array(
-        'table' => 'islandora_ip_embargo_lists',
-        'columns' => array('pid' => 'pid'),
-      ),
-      'datastream' => array(
-        'table' => 'islandora_ip_embargo_datastream',
-        'columns' => array('did' => 'did'),
-      ),
-    ),
-    'primary key' => array('id'),
-  );
-  
+
   return $schema;
 }
 
@@ -190,70 +131,4 @@ function islandora_ip_embargo_update_7100() {
     'description' => '0 if the event has not been triggered 1 if it has been.',
   );
   db_add_field('islandora_ip_embargo_embargoes', 'expiry_event_triggered', $new_field);
-}
-
-/**
- * Implements hook_update_N().
- */
-function islandora_ip_embargo_update_7101() {
-  $schema['islandora_ip_embargo_datastream'] = array(
-    'description' => 'Unique datastream name and id.',
-    'fields' => array(
-      'did' => array(
-        'type' => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'description' => 'The id of each item.',
-      ),
-      'datastream_name' => array(
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-        'description' => 'Name of the datastream',
-      ),
-    ),
-    'primary key' => array('did'),
-  );
-  
-  $schema['islandora_ip_embargo_embargoes_datastream'] = array(
-    'description' => 'Datastream embargo for particular pid.',
-    'fields' => array(
-      'id' => array(
-        'type' => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'description' => 'The id of each item.',
-      ),
-      'did' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'description' => 'The datastream id',
-      ),
-      'pid' => array(
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-        'description' => 'PID of Object',
-      ),
-      'expiry_date' => array(
-        'type' => 'varchar',
-        'length' => 255,
-        'description' => 'Expiry date of that pid',
-      ),
-    ),
-    'foreign keys' => array(
-      'list' => array(
-        'table' => 'islandora_ip_embargo_lists',
-        'columns' => array('pid' => 'pid'),
-      ),
-      'datastream' => array(
-        'table' => 'islandora_ip_embargo_datastream',
-        'columns' => array('did' => 'did'),
-      ),
-    ),
-    'primary key' => array('id'),
-  );
-  db_create_table('islandora_ip_embargo_datastream', $schema['islandora_ip_embargo_datastream']);
-  db_create_table('islandora_ip_embargo_embargoes_datastream', $schema['islandora_ip_embargo_embargoes_datastream']);
 }

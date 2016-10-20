@@ -180,7 +180,6 @@ function islandora_ip_embargo_cron() {
 
   // Execute cleanup on embargo expiry timestamps that have expired.
   islandora_ip_embargo_cron_cleanup(time());
-  islandora_ip_embargo_cron_datastream_cleanup(time());
 }
 
 /**
