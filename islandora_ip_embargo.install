@@ -136,7 +136,7 @@ function islandora_ip_embargo_update_7100() {
 /*
  * Create new field to store html embargo message in db
  */
-function cuhkdora_misc_update_7200(){
+function islandora_ip_embargo_update_7200(){
   $spec = array(
         'type' => 'blob',
         'size' => 'big',
