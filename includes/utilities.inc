@@ -28,9 +28,9 @@ function islandora_ip_embargo_get_lists() {
  * @param string $name
  *   The name of the new list.
  */
-function islandora_ip_embargo_add_list($name) {
+function islandora_ip_embargo_add_list($name,$embargo_msg) {
   db_insert('islandora_ip_embargo_lists')
-  ->fields(array('name' => $name))
+  ->fields(array('name' => $name,'embargo_msg' => serialize($embargo_msg)))
   ->execute();
 }
 
@@ -42,9 +42,9 @@ function islandora_ip_embargo_add_list($name) {
  * @param int $list_identifier
  *   The identifier of the list.
  */
-function islandora_ip_embargo_edit_list($name, $list_identifier) {
+function islandora_ip_embargo_edit_list($name, $list_identifier, $embargo_msg) {
   db_update('islandora_ip_embargo_lists')
-  ->fields(array('name' => $name))
+  ->fields(array('name' => $name,'embargo_msg' => serialize($embargo_msg)))
   ->condition('lid', $list_identifier)
   ->execute();
 }
@@ -81,6 +81,25 @@ function islandora_ip_embargo_get_list_name($list_identifier) {
 }
 
 /**
+ * Get the information of a list.
+ *
+ * @param int $list_identifier
+ *   The identifier of the list to delete.
+ *
+ * @return string
+ *   The human readable name of the list.
+ */
+function islandora_ip_embargo_get_list_info($list_identifier) {
+  $list = db_select('islandora_ip_embargo_lists')
+  ->fields('islandora_ip_embargo_lists')
+  ->condition('lid', $list_identifier)
+  ->execute();
+  $data = $list->fetchObject();
+
+  return $data;
+}
+
+/**
  * Get a list's information.
  *
  * @param int $list_identifier
@@ -103,6 +122,26 @@ function islandora_ip_embargo_get_lists_information($list_identifier, $page_resu
     $query = $query->limit(10);
   }
   return $query->execute();
+}
+
+/**
+ * Get a list's information.
+ *
+ * @param int $pid
+ *   The identifier of the list.
+ *
+ * @return SelectQuery
+ *   The query return.
+ */
+function islandora_ip_embargo_get_lists_msg($pid) {
+  $query = db_select("islandora_ip_embargo_lists", 'lists');
+  $query->join('islandora_ip_embargo_embargoes', 'iee', 'lists.lid = iee.lid');
+  $query = $query->fields('lists');
+  $query = $query->condition('iee.pid', $pid);
+  $msg = $query->execute();
+  $data = $msg->fetchObject();
+  
+  return $data->embargo_msg;
 }
 
 /**

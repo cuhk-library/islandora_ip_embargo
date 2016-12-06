@@ -132,3 +132,16 @@ function islandora_ip_embargo_update_7100() {
   );
   db_add_field('islandora_ip_embargo_embargoes', 'expiry_event_triggered', $new_field);
 }
+
+/*
+ * Create new field to store html embargo message in db
+ */
+function cuhkdora_misc_update_7200(){
+  $spec = array(
+        'type' => 'blob',
+        'size' => 'big',
+        'description' => 'Embargo HTML Message',
+        'serialize' => TRUE,
+      );
+  db_add_field('islandora_ip_embargo_lists', 'embargo_msg', $spec);
+}

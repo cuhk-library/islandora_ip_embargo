@@ -158,8 +158,9 @@ function islandora_ip_embargo_manage_lists_form($form, &$form_state) {
   $results = islandora_ip_embargo_get_lists();
   while ($data = $results->fetchObject()) {
     $options[$data->lid]['name'] = l($data->name, 'admin/islandora/tools/ip_embargo/lists/' . $data->lid);
+    $options[$data->lid]['embargo_msg'] = unserialize($data->embargo_msg);
   }
-  $header = array('name' => t('Name'));
+  $header = array('name' => t('Name'), 'embargo_msg' => t('Embargo Message'));
   $form['Lists'] = array(
     '#type' => 'tableselect',
     '#header' => $header,
@@ -243,6 +244,13 @@ function islandora_ip_embargo_add_list_form($form, &$form_state) {
     '#type' => 'textfield',
     '#required' => TRUE,
   );
+  //Add text field to let user add different message for different IP Range
+  $form['embargo_msg'] = array(
+    '#title' => t('Embargo Message'),
+    '#description' => t('Embargo Message show to user'),
+    '#type' => 'textarea',
+    '#required' => TRUE,
+  );
   $form['submit'] = array('#type' => 'submit', '#value' => t('Create list'));
 
   return $form;
@@ -258,7 +266,7 @@ function islandora_ip_embargo_add_list_form($form, &$form_state) {
  */
 function islandora_ip_embargo_add_list_form_submit($form, &$form_state) {
   module_load_include('inc', 'islandora_ip_embargo', 'includes/utilities');
-  islandora_ip_embargo_add_list($form_state['values']['name']);
+  islandora_ip_embargo_add_list($form_state['values']['name'],$form_state['values']['embargo_msg']);
   $form_state['redirect'] = 'admin/islandora/tools/ip_embargo';
 }
 
@@ -278,7 +286,9 @@ function islandora_ip_embargo_add_list_form_submit($form, &$form_state) {
 function islandora_ip_embargo_edit_list_form($form, &$form_state, $list_identifier) {
   module_load_include('inc', 'islandora_ip_embargo', 'includes/utilities');
   $list_information = islandora_ip_embargo_get_lists_information($list_identifier);
-  $list_name = islandora_ip_embargo_get_list_name($list_identifier);
+  $list_name_information = islandora_ip_embargo_get_list_info($list_identifier);
+  $list_name = $list_name_information->name;
+  $list_embargo_msg = unserialize($list_name_information->embargo_msg);
   $form_state['storage']['islandora_ip_embargo']['list_identifier'] = $list_identifier;
 
   $header = array('low_end' => t('low end'), 'high_end' => t('high end'));
@@ -296,6 +306,13 @@ function islandora_ip_embargo_edit_list_form($form, &$form_state, $list_identifi
     '#type' => 'textfield',
     '#required' => TRUE,
     '#default_value' => $list_name,
+  );
+  $form['embargo_msg'] = array(
+    '#title' => t('Embargo Message'),
+    '#description' => t('Embargo Message show to user'),
+    '#type' => 'textarea',
+    '#required' => TRUE,
+    '#default_value' => $list_embargo_msg,
   );
   $form['name_submit'] = array(
     '#type' => 'submit',
@@ -335,7 +352,9 @@ function islandora_ip_embargo_edit_list_form_name_submit($form, &$form_state) {
   module_load_include('inc', 'islandora_ip_embargo', 'includes/utilities');
   islandora_ip_embargo_edit_list(
     $form_state['values']['name'],
-    $form_state['storage']['islandora_ip_embargo']['list_identifier']);
+    $form_state['storage']['islandora_ip_embargo']['list_identifier'],
+    $form_state['values']['embargo_msg']
+  );
 }
 
 /**
