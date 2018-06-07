@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Holds helper functions for islandora_ip_embargo.
@@ -57,8 +58,8 @@ function islandora_ip_embargo_edit_list($name, $list_identifier, $embargo_msg) {
  */
 function islandora_ip_embargo_remove_list($list_identifier) {
   db_delete('islandora_ip_embargo_lists')
-  ->condition('lid', $list_identifier)
-  ->execute();
+    ->condition('lid', $list_identifier)
+    ->execute();
 }
 
 /**
@@ -72,9 +73,9 @@ function islandora_ip_embargo_remove_list($list_identifier) {
  */
 function islandora_ip_embargo_get_list_name($list_identifier) {
   $list = db_select('islandora_ip_embargo_lists')
-  ->fields('islandora_ip_embargo_lists')
-  ->condition('lid', $list_identifier)
-  ->execute();
+    ->fields('islandora_ip_embargo_lists')
+    ->condition('lid', $list_identifier)
+    ->execute();
   $data = $list->fetchObject();
 
   return $data->name;
@@ -152,8 +153,8 @@ function islandora_ip_embargo_get_lists_msg($pid) {
  */
 function islandora_ip_embargo_remove_range($range_identifier) {
   db_delete('islandora_ip_embargo_ip_ranges')
-  ->condition('rid', $range_identifier)
-  ->execute();
+    ->condition('rid', $range_identifier)
+    ->execute();
 }
 
 /**
@@ -168,12 +169,12 @@ function islandora_ip_embargo_remove_range($range_identifier) {
  */
 function islandora_ip_embargo_add_ip_range($list_identifier, $low_end, $high_end) {
   db_insert('islandora_ip_embargo_ip_ranges')
-  ->fields(array(
-    'low_end' => $low_end,
-    'high_end' => $high_end,
-    'lid' => $list_identifier,
-  ))
-  ->execute();
+    ->fields(array(
+      'low_end' => $low_end,
+      'high_end' => $high_end,
+      'lid' => $list_identifier,
+    ))
+    ->execute();
 }
 
 /**
@@ -187,9 +188,9 @@ function islandora_ip_embargo_add_ip_range($list_identifier, $low_end, $high_end
  */
 function islandora_ip_embargo_get_embargo($islandora_object_id) {
   $embargoes = db_select('islandora_ip_embargo_embargoes')
-  ->fields('islandora_ip_embargo_embargoes')
-  ->condition('pid', $islandora_object_id)
-  ->execute();
+    ->fields('islandora_ip_embargo_embargoes')
+    ->condition('pid', $islandora_object_id)
+    ->execute();
 
   return $embargoes;
 }
@@ -205,9 +206,9 @@ function islandora_ip_embargo_get_embargo($islandora_object_id) {
  */
 function islandora_ip_embargo_get_embargos($list_identifier) {
   $embargoes = db_select('islandora_ip_embargo_embargoes')
-  ->fields('islandora_ip_embargo_embargoes')
-  ->condition('lid', $list_identifier)
-  ->execute();
+    ->fields('islandora_ip_embargo_embargoes')
+    ->condition('lid', $list_identifier)
+    ->execute();
 
   return $embargoes;
 }
@@ -224,13 +225,13 @@ function islandora_ip_embargo_get_embargos($list_identifier) {
  */
 function islandora_ip_embargo_update_embargo($islandora_object_id, $list_id, $expiry = NULL) {
   db_update('islandora_ip_embargo_embargoes')
-  ->fields(array(
-    'pid' => $islandora_object_id,
-    'lid' => $list_id,
-    'expiry' => $expiry,
-  ))
-  ->condition('pid', $islandora_object_id)
-  ->execute();
+    ->fields(array(
+      'pid' => $islandora_object_id,
+      'lid' => $list_id,
+      'expiry' => $expiry,
+    ))
+    ->condition('pid', $islandora_object_id)
+    ->execute();
 }
 
 /**
@@ -245,12 +246,16 @@ function islandora_ip_embargo_update_embargo($islandora_object_id, $list_id, $ex
  */
 function islandora_ip_embargo_set_embargo($islandora_object_id, $list_id, $expiry = NULL) {
   db_insert('islandora_ip_embargo_embargoes')
-  ->fields(array(
-    'pid' => $islandora_object_id,
+    ->fields(array(
+      'pid' => $islandora_object_id,
+      'lid' => $list_id,
+      'expiry' => $expiry,
+    ))
+    ->execute();
+  module_invoke_all('islandora_ip_embargo_set', $islandora_object_id, array(
     'lid' => $list_id,
     'expiry' => $expiry,
-  ))
-  ->execute();
+  ));
 }
 
 /**
@@ -261,8 +266,9 @@ function islandora_ip_embargo_set_embargo($islandora_object_id, $list_id, $expir
  */
 function islandora_ip_embargo_remove_embargo($islandora_object_id) {
   db_delete('islandora_ip_embargo_embargoes')
-  ->condition('pid', $islandora_object_id)
-  ->execute();
+    ->condition('pid', $islandora_object_id)
+    ->execute();
+  module_invoke_all('islandora_ip_embargo_lifted', $islandora_object_id);
 }
 
 /**
@@ -291,8 +297,8 @@ function islandora_ip_embargo_ip_in_range($low, $high) {
  */
 function islandora_ip_embargo_cron_cleanup($time_stamp) {
   $num_deleted = db_delete('islandora_ip_embargo_embargoes')
-  ->condition('expiry', $time_stamp, '<=')
-  ->execute();
+    ->condition('expiry', $time_stamp, '<=')
+    ->execute();
 
   watchdog(
     'Cron Job End',
@@ -317,7 +323,8 @@ function islandora_ip_embargo_send_embargo_lift_events($days_before) {
       'operations' => array(
         array(
           'islandora_ip_embargo_embargo_lift_event_batch',
-          array($event_threshold)),
+          array($event_threshold),
+        ),
       ),
       'finished' => 'islandora_ip_embargo_lift_event_batch_finished',
       'title' => t('Sending out embargo lift events.'),
@@ -349,12 +356,12 @@ function islandora_ip_embargo_send_embargo_lift_events($days_before) {
  */
 function islandora_ip_embargo_count_embargoes_before_timestamp($event_threshold) {
   return db_select('islandora_ip_embargo_embargoes')
-  ->fields('islandora_ip_embargo_embargoes')
-  ->condition('expiry', $event_threshold, '<=')
-  ->condition('expiry_event_triggered', 0, '=')
-  ->countQuery()
-  ->execute()
-  ->fetchField();
+    ->fields('islandora_ip_embargo_embargoes')
+    ->condition('expiry', $event_threshold, '<=')
+    ->condition('expiry_event_triggered', 0, '=')
+    ->countQuery()
+    ->execute()
+    ->fetchField();
 }
 
 /**
@@ -374,12 +381,12 @@ function islandora_ip_embargo_count_embargoes_before_timestamp($event_threshold)
  */
 function islandora_ip_embargo_get_embargoes_before_timestamp($event_threshold, $offset, $limit) {
   return db_select('islandora_ip_embargo_embargoes')
-  ->fields('islandora_ip_embargo_embargoes')
-  ->condition('expiry', $event_threshold, '<=')
-  ->condition('expiry_event_triggered', 0, '=')
-  ->orderBy('pid', 'ASC')
-  ->range($offset, $limit)
-  ->execute();
+    ->fields('islandora_ip_embargo_embargoes')
+    ->condition('expiry', $event_threshold, '<=')
+    ->condition('expiry_event_triggered', 0, '=')
+    ->orderBy('pid', 'ASC')
+    ->range($offset, $limit)
+    ->execute();
 }
 
 /**
@@ -393,10 +400,10 @@ function islandora_ip_embargo_get_embargoes_before_timestamp($event_threshold, $
  */
 function islandora_ip_embargo_set_event_triggered($event_threshold) {
   return db_update('islandora_ip_embargo_embargoes')
-  ->fields(array('expiry_event_triggered' => 1))
-  ->condition('expiry', $event_threshold, '<=')
-  ->condition('expiry_event_triggered', 0, '=')
-  ->execute();
+    ->fields(array('expiry_event_triggered' => 1))
+    ->condition('expiry', $event_threshold, '<=')
+    ->condition('expiry_event_triggered', 0, '=')
+    ->execute();
 }
 
 /**
