@@ -458,3 +458,91 @@ function islandora_ip_embargo_restrict_access($pid) {
   }
   return !$open_access;
 }
+
+/**
+ * Select all exception page id
+ * @param string $pid
+ *   The PID of the object to check.
+ *
+ * @return array
+ *   List of page id will be exclude in IP embargo.
+ */
+function islandora_ip_embargo_select_ignore_page_list() {
+  $query = db_select("islandora_ip_embargo_ignore_page_list");
+  $query = $query->fields('islandora_ip_embargo_ignore_page_list');
+  $query = $query->extend('TableSort');
+  $query = $query->extend('PagerDefault');
+  $query = $query->limit(50);
+
+  return $query->execute()->fetchAll(PDO::FETCH_ASSOC);
+}
+
+/**
+ * Select exception page with url
+ * @param string $url
+ *   URL of page will be exclude in embargo
+ *
+ * @return array
+ *   page will be exclude in IP embargo.
+ */
+function islandora_ip_embargo_select_ignore_page($url) {
+  $result = db_select("islandora_ip_embargo_ignore_page_list")
+          ->fields('islandora_ip_embargo_ignore_page_list')
+          ->condition('alias',$url ,'=')
+          ->execute()->fetchAll(PDO::FETCH_ASSOC);
+
+  return $result;
+}
+
+/**
+ * Select exception page with url
+ * @param string $url
+ *   URL of page will be exclude in embargo
+ *
+ * @return array
+ *   page will be exclude in IP embargo.
+ */
+function islandora_ip_embargo_select_ignore_page_with_nid($nid) {
+  $result = db_select("islandora_ip_embargo_ignore_page_list")
+          ->fields('islandora_ip_embargo_ignore_page_list')
+          ->condition('node_id',$nid ,'=')
+          ->execute()->fetchAll(PDO::FETCH_ASSOC);
+
+  return $result;
+}
+/**
+ * Select exception page id with filter
+ * @param string $pid
+ *   The PID of the object to check.
+ *
+ * @return array
+ *   List of page will be exclude in IP embargo
+ */
+function islandora_ip_embargo_filter_ignore_page_list($filter_list = NULL) {
+  $params = array();
+  if(!empty($filter_list)){
+    foreach($filter_list as $value){
+      $params[] = trim($value);
+    }
+  }
+  $query = db_select("islandora_ip_embargo_ignore_page_list");
+  $query = $query->fields('islandora_ip_embargo_ignore_page_list');
+  $query = $query->condition('alias',$params ,'IN');
+  $query = $query->extend('TableSort');
+  $query = $query->extend('PagerDefault');
+  $query = $query->limit(50);
+
+  return $query->execute()->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function islandora_ip_embargo_add_ignore_page_list($list = array()) {
+    db_insert('islandora_ip_embargo_ignore_page_list')
+        ->fields(array('node_id' => $list['node_id'],'alias' => $list['alias'],'ignore_datastream' => NULL))
+        ->execute();
+}
+
+function islandora_ip_embargo_remove_ignore_page_list($id) {
+    db_delete('islandora_ip_embargo_ignore_page_list')
+    ->condition('id', $id)
+    ->execute();
+}

@@ -108,6 +108,24 @@ function islandora_ip_embargo_menu() {
       'type' => MENU_LOCAL_TASK,
       'access arguments' => array(ISLANDORA_IP_EMBARGO_MANAGE_EMBARGOES),
     ),
+    'admin/islandora/tools/ip_embargo/ignore_list' => array(
+      'title' => 'IP Embargo Exceptional Pages list',
+      'description' => "Configure exceptional pages islandora will allow to access datastream even the object is embargo",
+      'file' => 'includes/embargo.ignore.page.list.form.inc',
+      'page arguments' => array('islandora_ip_embargo_exceptional_pages_list_form'),
+      'page callback' => 'drupal_get_form',
+      'type' => MENU_LOCAL_TASK,
+      'access arguments' => array(ISLANDORA_IP_EMBARGO_CONTROL_EMBARGOES),
+    ),
+    'admin/islandora/tools/ip_embargo/ignore_list/add' => array(
+      'title' => 'Add IP Embargo Exceptional Page',
+      'description' => 'Add IP Embargo Exceptional Page',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('islandora_ip_embargo_add_ignore_page_form'),
+      'type' => MENU_NORMAL_ITEM,
+      'file' => 'includes/embargo.add.ignore.page.form.inc',
+      'access arguments' => array(ISLANDORA_IP_EMBARGO_ADMINISTER_PERMISSION),
+    ),
   );
 }
 
@@ -118,12 +136,24 @@ function islandora_ip_embargo_menu() {
  */
 function islandora_ip_embargo_islandora_datastream_access($op, $islandora_datastream, $user) {
   module_load_include('inc', 'islandora_ip_embargo', 'includes/utilities');
+  global $base_url;
+  $urlparts = preg_replace('/\?.*/', '', str_replace($base_url,'',$_SERVER['HTTP_REFERER']));
+  if(substr($urlparts, -1) == '/'){
+     $urlparts = substr($urlparts, 0, -1);
+  }
   // If we're looking for a thumbnail let it through.
   $restrict_access = islandora_ip_embargo_restrict_access($islandora_datastream->parent->id);
   if ($islandora_datastream->id == 'TN' && $restrict_access) {
     return TRUE;
   }elseif($islandora_datastream->id == 'PREVIEW' && $restrict_access){
     return TRUE;
+  }elseif($islandora_datastream->id == 'JPG' && $restrict_access){
+    $pageExclude = islandora_ip_embargo_select_ignore_page($urlparts);
+    if(isset($pageExclude) && !empty($pageExclude)){
+        return TRUE;
+    }else{
+        return FALSE;
+    }
   }elseif ($restrict_access) {
     return FALSE;
   }
