@@ -137,12 +137,37 @@ function islandora_ip_embargo_update_7100() {
 /*
  * Create new field to store html embargo message in db
  */
-function islandora_ip_embargo_update_7200(){
-  $spec = array(
-        'type' => 'blob',
-        'size' => 'big',
-        'description' => 'Embargo HTML Message',
-        'serialize' => TRUE,
-      );
-  db_add_field('islandora_ip_embargo_lists', 'embargo_msg', $spec);
+function islandora_ip_embargo_update_7500(){
+  $schema['islandora_ip_embargo_ignore_page_list'] = array(
+        'description' => 'Table for store list of page to be ignore in ip embargo',
+        'fields' => array(
+          'id' => array(
+            'type' => 'serial',
+            'unsigned' => TRUE,
+            'not null' => TRUE,
+            'description' => 'The ID for each record',
+          ),
+          'node_id' => array(
+            'type' => 'varchar',
+            'length' => 30,
+            'not null' => TRUE,
+            'description' => 'Drupal Node ID',
+          ),
+          'alias' => array(
+            'type' => 'varchar',
+            'length' => 255,
+            'not null' => TRUE,
+            'description' => 'Drupal URL Alias',
+          ),
+          'ignore_datastream' => array(
+            'type' => 'varchar',
+            'length' => 40,
+            'not null' => FALSE,
+            'description' => 'Ignore Datastream',
+          ),
+        ),
+        'primary key' => array('id'),
+    );
+    
+    db_create_table('islandora_ip_embargo_ignore_page_list', $schema['islandora_ip_embargo_ignore_page_list']);
 }
